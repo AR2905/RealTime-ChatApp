@@ -1,0 +1,109 @@
+@import url("https://fonts.googleapis.com/css2?family=Work+Sans:wght@300&display=swap");
+
+
+::-webkit-scrollbar {
+  width: 0px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(136, 136, 136, 0.281);
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+
+.HomePageBox{
+  background: radial-gradient(circle at 24.1% 68.8%, rgb(50, 50, 50) 0%, rgb(0, 0, 0) 99.4%);
+  color: white;
+
+}
+
+.ChooseButton:hover{
+  box-shadow: 0px 0px 5px cyan;
+  
+}
+
+@media only screen and (max-width: 480px) {
+  .HeadingBox{
+    font-size: 1.5rem !important;
+  }
+ .ChatBoxHeading{
+  font-size: 24px !important;
+
+
+ }
+ .NewGrpBtn{
+  transform: scale(0.9);
+ }
+ .ChatBoxUserName{
+  font-size: 22px !important;
+
+ }
+
+ .ChatBoxBtn{
+  transform: scale(0.85);
+
+ }
+ .SingleChatBtn{
+
+  transform: scale(0.7);
+
+ }
+
+ .ChatEyeButton{
+  transform: scale(0.7);
+
+ }
+
+ .CreateGrpModalHeader{
+  font-size: 1.5rem !important;
+ }
+  .CreateGrpModalTextBox1{
+    font-size: 0.9rem !important;
+  }
+  .CreateGrpModalTextBox2{
+    font-size: 0.9rem !important;
+  }
+  .CreateGrpModalBtn{
+    transform:scale(0.9)
+  }
+  .CreateGrpModal{
+    margin: 2rem !important;
+  }
+  .ProfileModalHeader{
+    font-size: 1.5rem !important;
+  }
+  .ProfileModalEmail{
+    font-size: 1.25rem !important;
+  }
+  .ProfileModalBox{
+    margin: 2rem !important;
+    height: 375px !important;
+  }
+  .UpdateGrpModalInput2{
+    font-size: 0.9rem !important;
+  }
+  .UpdateGrpModalInput2{
+    font-size: 0.9rem !important;
+  }
+  .UpdateGrpModalBox{
+    margin: 2rem !important;
+  }
+  .UpdateGrpModalHeader{
+    font-size: 1.75rem;
+  }
+  .UpdateGrpModalUpdateBtn{
+    transform: scale(0.9);
+  }
+  .UpdateGrpModalLeaveGrpBtn{
+    transform: scale(0.9);
+  }
+}
+
+@media only screen and (max-width: 378px) {
+.forSingleChatsize {
+  font-size: 0.85rem;
+} }
