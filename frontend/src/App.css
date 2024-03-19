@@ -101,6 +101,9 @@
   .UpdateGrpModalLeaveGrpBtn{
     transform: scale(0.9);
   }
+    .SingleChatOuterBox{
+    padding: 0.25rem !important;
+  }
 }
 
 @media only screen and (max-width: 378px) {
