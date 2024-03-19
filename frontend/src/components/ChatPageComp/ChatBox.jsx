@@ -9,6 +9,7 @@ const ChatBox = ({ fetchAgain, setFetchAgain }) => {
 
   return (
     <Box
+      className="SingleChatOuterBox"
       display={{ base: selectedChat ? "flex" : "none", md: "flex" }}
       alignItems="center"
       flexDir="column"
