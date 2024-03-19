@@ -309,6 +309,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                     style={{ marginBottom: 15, marginLeft: 0 }}
             /></div> : <></>}
             <Input
+                 className='ChatBoxInput'
                variant="filled"
   bg="#0c192c"
   placeholder="Enter a message.."

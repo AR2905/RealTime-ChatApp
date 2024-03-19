@@ -107,3 +107,9 @@
 .forSingleChatsize {
   font-size: 0.85rem;
 } }
+
+
+
+.ChatBoxInput{
+  padding-right: 3rem !important;
+}
