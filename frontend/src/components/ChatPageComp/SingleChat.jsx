@@ -301,13 +301,17 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             mt={3}
          
             >
-            {istyping ? <div>
-            <Lottie 
-              options={defaultOptions}
-                    // height={50}
-                    width={70}
-                    style={{ marginBottom: 15, marginLeft: 0 }}
-            /></div> : <></>}
+             {istyping ? <div>
+            <div  
+    style={{ marginBottom: 15, marginLeft: 0 , display:"inline-block"}} >
+            <Lottie  
+    options={defaultOptions}
+    // height={50}
+    width={70}
+    
+/>
+            </div>
+             </div> : <></>}
             <Input
                  className='ChatBoxInput'
                variant="filled"
