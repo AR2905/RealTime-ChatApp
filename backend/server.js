@@ -54,7 +54,7 @@ const io = require("socket.io")(server,{
     pingTimeout : 60000, 
     cors:
     {
-        origin:  `http://localhost:${port}`
+        origin:  `https://chatx-7yko.onrender.com/`
     }
 })
 
