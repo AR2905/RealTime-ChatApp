@@ -3,7 +3,6 @@
 
 This Chat App is a Full Stack Chatting App.
 Uses Socket.io for real time communication.
-Using MongoDb for storing the user details in encrypted form.
 
 ## Technology Stack
 
