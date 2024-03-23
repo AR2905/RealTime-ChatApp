@@ -104,6 +104,10 @@
     .SingleChatOuterBox{
     padding: 0.25rem !important;
   }
+
+  .MainChatBoxOuter{
+    padding: 0.25rem !important;
+  }
 }
 
 @media only screen and (max-width: 378px) {
