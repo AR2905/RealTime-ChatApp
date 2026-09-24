@@ -1,12 +1,11 @@
-const express = require("express") 
-const { GetCookieInfo, GetAllUsers } = require("../Controllers/ApiData")
+const express = require("express")
+const { GetCookieInfo, GetAllUsers, getUnreadCounts } = require("../Controllers/ApiData")
 const { protect } = require("../Middlewares/ProtectMiddleware")
 
-const router  = express.Router()
+const router = express.Router()
 
-router.get("/cookie" , GetCookieInfo)
+router.get("/me", protect, GetCookieInfo)
+router.get("/users/unread", protect, getUnreadCounts)
+router.get("/users", protect, GetAllUsers)
 
-router.get("/users" , protect ,GetAllUsers)
-
-  
 module.exports = router
