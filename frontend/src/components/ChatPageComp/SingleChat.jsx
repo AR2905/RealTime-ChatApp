@@ -1,205 +1,267 @@
-import React, { useEffect, useState } from 'react'
-import { ChatState } from '../../context/chatContext'
-import { Box, Button, FormControl, IconButton, Input, Spinner, Text, useToast } from '@chakra-ui/react'
-import { ArrowBackIcon } from '@chakra-ui/icons'
-import {getSender , getSenderFull} from '../../config/chatLogic'
-import ProfileModal from './ProfileModal'
-import UpdateGroupChatModal from './UpdateGroupChatModal'
-import axios from 'axios'
-import ScrollableChat from './ScrollableChat'
-import animationData from '../../Animations/typing.json'
-import Lottie from 'react-lottie'
-import io from 'socket.io-client'
-const  ENDPOINT = process.env.REACT_APP_SOCKET_URL || ""
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Box,
+  Button,
+  FormControl,
+  IconButton,
+  Input,
+  Spinner,
+  Text,
+  useToast,
+  InputGroup,
+  InputRightElement,
+} from "@chakra-ui/react";
+import { ArrowBackIcon, SearchIcon, AttachmentIcon, CloseIcon } from "@chakra-ui/icons";
+import { getSender, getSenderFull, timeAgo } from "../../config/chatLogic";
+import ProfileModal from "./ProfileModal";
+import UpdateGroupChatModal from "./UpdateGroupChatModal";
+import axios from "axios";
+import ScrollableChat from "./ScrollableChat";
+import animationData from "../../Animations/typing.json";
+import Lottie from "react-lottie";
+import { getSocket } from "../../config/socket";
+import { ChatState } from "../../context/chatContext";
+import { uploadToCloudinary } from "../../config/upload";
 
-var socket, selectedChatCompare ;
-
-
+const PAGE_SIZE = 30;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
-
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [newMessage, setNewMessage] = useState("");
-  const toast = useToast()
-  const { selectedChat, setSelectedChat, user, notification, setNotification } =
-    ChatState();
+  const [istyping, setIsTyping] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState(null);
+  const [attachLoading, setAttachLoading] = useState(false);
+  const toast = useToast();
 
-    const [socketConnected, setSocketConnected] = useState(false);
-    const [typing, setTyping] = useState(false);
-    const [istyping, setIsTyping] = useState(false);
-    const defaultOptions = {
-      loop: true,
-      autoplay: true,
-      animationData: animationData,
-      rendererSettings: {
-        preserveAspectRatio: "xMidYMid slice",
-      },
-    };
+  const {
+    selectedChat,
+    setSelectedChat,
+    user,
+    setNotification,
+    socketConnected,
+    setSocketConnected,
+    onlineUsers,
+  } = ChatState();
 
-  const fetchMessages = async()=>{
-    if(!selectedChat ) return
+  const socket = getSocket(user);
+  const messagesRef = useRef(messages);
+  const selectedChatRef = useRef(selectedChat);
 
-    try {
-      const config = {
-        headers: {
-          
-          authorization: `Bearer ${user.token}`,
-        },
-      }
+  messagesRef.current = messages;
+  selectedChatRef.current = selectedChat;
 
-      setLoading(true)
+  const defaultOptions = {
+    loop: true,
+    autoplay: true,
+    animationData,
+    rendererSettings: { preserveAspectRatio: "xMidYMid slice" },
+  };
 
-      const {data} = await axios.get(`/message/${selectedChat._id}`, config
-      )
-
-
-      setMessages(data)
-
-      setLoading(false)
-
-      socket.emit("join chat" , selectedChat._id)
-
-    } catch (error) {
-      toast({
-        title: "Error",
-        description:"Failed to load the msgs",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-        position: "bottom",
-      });
-    }
-  }
-
-  useEffect(()=>{
-    socket = io(ENDPOINT)
-    socket.emit("setup" ,user)
-    socket.on("connected" , () =>{
-      setSocketConnected(true)
-    })    
-
-    socket.on("typing", () => setIsTyping(true));
-    socket.on("stop typing", () => setIsTyping(false));
-     // eslint-disable-next-line
-  }, [])
-
-
-
-  useEffect(()=>{
-    fetchMessages()
-    selectedChatCompare = selectedChat
-     // eslint-disable-next-line
-  }, [selectedChat])
-
-  
-  useEffect(() => {
-    socket.on("msg recieved", (newMessageRecieved) => {
-      if (
-        !selectedChatCompare || // if chat is not selected or doesn't match current chat
-        selectedChatCompare._id !== newMessageRecieved.chat._id
-      ) {
-        // notification logic
-        if (!notification.includes(newMessageRecieved)) {
-          setNotification([newMessageRecieved, ...notification]);
-          setFetchAgain(!fetchAgain);
-        }
-      } else {
-        setMessages([...messages, newMessageRecieved]);
-      }
-    });
+  const getConfig = () => ({
+    headers: {
+      authorization: `Bearer ${user.token}`,
+    },
   });
 
-  const sendMsgOnClick = async () =>{
-
-      socket.emit('stop typing' , selectedChat._id)
-
-      const trimmedMessage = newMessage.trim();
-
-      if(!newMessage || !trimmedMessage ) return
-
-      try {
-        const config = {
-          headers: {
-            "Content-type": "application/json",
-            authorization: `Bearer ${user.token}`,
-          },
-        }
-
-        setNewMessage("")
-
-
-        const {data} = await axios.post('/message'  , {
-          content:newMessage,
-          chatId : selectedChat._id
-        },  config)
-
-        socket.emit("new msg" , data )
-        setMessages([...messages , data])
-      } catch (error) {
-        toast({
-              title: "Msg not sent",
-              status: "error",
-              duration: 5000,
-              isClosable: true,
-              position: "bottom",
-            });
-      }
-
-
-  }
-
-
-  const sendMessage = async(e) =>{
-
-    const trimmedMessage = newMessage.trim();
-
-    if(!trimmedMessage) return
-
-    if(e.key === 'Enter' && newMessage ){
-      socket.emit('stop typing' , selectedChat._id)
-      try {
-        const config = {
-          headers: {
-            "Content-type": "application/json",
-            authorization: `Bearer ${user.token}`,
-          },
-        }
-
-        setNewMessage("")
-
-
-        const {data} = await axios.post('/message'  , {
-          content:newMessage,
-          chatId : selectedChat._id
-        },  config)
-
-        socket.emit("new msg" , data )
-        setMessages([...messages , data])
-      } catch (error) {
-        toast({
-              title: "Msg not sent",
-              status: "error",
-              duration: 5000,
-              isClosable: true,
-              position: "bottom",
-            });
-      }
+  const markAsRead = async (chatId) => {
+    if (!chatId) return;
+    try {
+      await axios.put(`/message/${chatId}/read`, {}, getConfig());
+      socket.emit("msg read", { chatId, userId: user._id });
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.sender?._id !== user._id && !(m.readBy || []).includes(user._id)
+            ? { ...m, readBy: [...(m.readBy || []), user._id] }
+            : m
+        )
+      );
+    } catch (err) {
+      // silent
     }
+  };
 
-  }
+  const fetchMessages = async () => {
+    if (!selectedChat) return;
+    try {
+      setLoading(true);
+      setSearchResults(null);
+      const { data } = await axios.get(`/message/${selectedChat._id}?limit=${PAGE_SIZE}&skip=0`, getConfig());
+      setMessages(data.messages || []);
+      setHasMore(data.hasMore || false);
+      setLoading(false);
+      socket.emit("join chat", selectedChat._id);
+      markAsRead(selectedChat._id);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to load the msgs", status: "error", position: "bottom" });
+      setLoading(false);
+    }
+  };
+
+  const loadOlder = async () => {
+    if (!selectedChat || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const { data } = await axios.get(
+        `/message/${selectedChat._id}?limit=${PAGE_SIZE}&skip=${messagesRef.current.length}`,
+        getConfig()
+      );
+      setMessages((prev) => [...data.messages, ...prev]);
+      setHasMore(data.hasMore || false);
+    } catch (e) {
+      toast({ title: "Could not load older messages", status: "error", position: "bottom" });
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const searchMessages = async (q) => {
+    if (!q.trim()) {
+      setSearchResults(null);
+      return;
+    }
+    try {
+      const { data } = await axios.get(`/message/${selectedChatRef.current._id}/search?q=${encodeURIComponent(q.trim())}`, getConfig());
+      setSearchResults(data.messages || []);
+    } catch (e) {
+      setSearchResults([]);
+    }
+  };
+
+  // Socket lifecycle
+  useEffect(() => {
+    socket.emit("setup", user);
+    socket.on("connected", () => setSocketConnected(true));
+    return () => {
+      socket.off("connected");
+    };
+    // eslint-disable-next-line
+  }, []);
+
+  // Chat change
+  useEffect(() => {
+    fetchMessages();
+    // eslint-disable-next-line
+  }, [selectedChat]);
+
+  // Mount + chat-scoped listeners
+  useEffect(() => {
+    socket.on("typing", () => setIsTyping(true));
+    socket.on("stop typing", () => setIsTyping(false));
+
+    const onMsgReceived = (newMessageRecieved) => {
+      const cur = selectedChatRef.current;
+      if (!cur || cur._id !== newMessageRecieved.chat._id) {
+        setNotification((prev) => (prev.some((n) => n._id === newMessageRecieved._id) ? prev : [newMessageRecieved, ...prev]));
+        setFetchAgain((f) => !f);
+      } else {
+        setMessages((prev) => (prev.some((m) => m._id === newMessageRecieved._id) ? prev : [...prev, newMessageRecieved]));
+        markAsRead(newMessageRecieved.chat._id);
+      }
+    };
+
+    const onEdited = (message) => {
+      setMessages((prev) => prev.map((m) => (m._id === message._id ? message : m)));
+    };
+
+    const onDeleted = (messageId) => {
+      setMessages((prev) => prev.filter((m) => m._id !== messageId));
+      setFetchAgain((f) => !f);
+    };
+
+    const onReacted = ({ messageId, reactions }) => {
+      setMessages((prev) => prev.map((m) => (m._id === messageId ? { ...m, reactions } : m)));
+    };
+
+    const onRead = ({ chatId, userId }) => {
+      // userId read this chat → mark MY messages as read by them (✓✓ for sender)
+      if (chatId === selectedChatRef.current?._id && userId !== user._id) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.sender?._id === user._id && !(m.readBy || []).includes(userId)
+              ? { ...m, readBy: [...(m.readBy || []), userId] }
+              : m
+          )
+        );
+      }
+    };
+
+    socket.on("msg recieved", onMsgReceived);
+    socket.on("message edited", onEdited);
+    socket.on("message deleted", onDeleted);
+    socket.on("message reacted", onReacted);
+    socket.on("messages read", onRead);
+
+    return () => {
+      socket.off("msg recieved", onMsgReceived);
+      socket.off("message edited", onEdited);
+      socket.off("message deleted", onDeleted);
+      socket.off("message reacted", onReacted);
+      socket.off("messages read", onRead);
+    };
+    // eslint-disable-next-line
+  }, []);
+
+  const sendMessage = async (content, attachment) => {
+    if ((!content || !content.trim()) && !attachment?.url) return;
+
+    try {
+      setNewMessage("");
+      socket.emit("stop typing", selectedChat._id);
+      const config = {
+        headers: {
+          "Content-type": "application/json",
+          authorization: `Bearer ${user.token}`,
+        },
+      };
+      const { data } = await axios.post(
+        "/message",
+        { content: content || "", chatId: selectedChat._id, attachment },
+        config
+      );
+      socket.emit("new msg", data);
+      setMessages((prev) => [...prev, data]);
+    } catch (error) {
+      toast({ title: "Msg not sent", status: "error", position: "bottom" });
+    }
+  };
+
+  const sendMsgOnClick = () => sendMessage(newMessage);
+  const onKeySend = (e) => {
+    if (e.key === "Enter" && newMessage) {
+      e.preventDefault();
+      sendMessage(newMessage);
+    }
+  };
+
+  const handleAttachment = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAttachLoading(true);
+    try {
+      const uploaded = await uploadToCloudinary(file);
+      await sendMessage("", { url: uploaded.url, type: "image", name: file.name });
+    } catch (err) {
+      toast({ title: "Upload failed", description: err.message, status: "error", position: "bottom" });
+    } finally {
+      setAttachLoading(false);
+    }
+  };
 
   const typingHandler = (e) => {
     setNewMessage(e.target.value);
-
     if (!socketConnected) return;
-
     if (!typing) {
       setTyping(true);
       socket.emit("typing", selectedChat._id);
     }
     let lastTypingTime = new Date().getTime();
-    var timerLength = 3000; 
+    var timerLength = 3000;
     setTimeout(() => {
       var timeNow = new Date().getTime();
       var timeDiff = timeNow - lastTypingTime;
@@ -210,53 +272,100 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }, timerLength);
   };
 
+  const isDM = !selectedChat?.isGroupChat;
+  const otherUser = isDM ? getSenderFull(user, selectedChat?.users) : null;
+  const otherOnline =
+    isDM &&
+    otherUser?._id &&
+    (onlineUsers[otherUser._id] !== undefined
+      ? onlineUsers[otherUser._id]
+      : otherUser.online);
+
+  const headerSub = isDM
+    ? otherUser?._id
+      ? `${otherOnline ? "🟢 Online" : `Last seen ${timeAgo(otherUser.lastSeen)}`}`
+      : ""
+    : `${selectedChat?.users?.length || 0} members`;
+
+  const displayedMessages = searchResults || messages;
 
   return (
     <>
-    {selectedChat ? (
+      {selectedChat ? (
         <>
-        <Text
-        className='ChatBoxUserName'
-            fontSize={{ base: "28px", md: "30px" }}
+          <Text
+            className="ChatBoxUserName"
+            fontSize={{ base: "20px", md: "24px" }}
             pb={3}
             px={2}
             w="100%"
             fontFamily="Work sans"
             display="flex"
-            justifyContent={{ base: "space-between" }}
+            justifyContent="space-between"
             alignItems="center"
           >
-
-<IconButton className='SingleChatBtn'
+            <IconButton
+              className="SingleChatBtn"
               display={{ base: "flex", md: "none" }}
               icon={<ArrowBackIcon />}
               onClick={() => setSelectedChat("")}
             />
+            <Box minW={0}>
+              <Box display="flex" alignItems="center" gap={2}>
+                {isDM ? getSender(user, selectedChat.users) : selectedChat.chatName.toUpperCase()}
+                {isDM && (
+                  <Box
+                    w="8px"
+                    h="8px"
+                    borderRadius="full"
+                    bg={otherOnline ? "#25D366" : "gray.500"}
+                    display="inline-block"
+                  />
+                )}
+              </Box>
+              <Text fontSize="xs" color="gray.400" fontWeight="normal">
+                {headerSub}
+              </Text>
+            </Box>
 
-            {
-              (!selectedChat.isGroupChat ? (
-                <>
-                  {getSender(user, selectedChat.users)}
-                  <ProfileModal
-                    user={getSenderFull(user, selectedChat.users)}
-                  />
-                </>
+            <Box display="flex" gap={2} alignItems="center">
+              <IconButton
+                icon={showSearch ? <CloseIcon /> : <SearchIcon />}
+                aria-label="Search messages"
+                onClick={() => {
+                  setShowSearch((s) => !s);
+                  setSearchResults(null);
+                  setSearchTerm("");
+                }}
+              />
+              {isDM ? (
+                <ProfileModal user={otherUser} />
               ) : (
-                <>
-                  {selectedChat.chatName.toUpperCase()}
-                  <UpdateGroupChatModal
-                    fetchMessages={fetchMessages}
-                    fetchAgain={fetchAgain}
-                    setFetchAgain={setFetchAgain}
-                  />
-                </>
-              ))
-            }
+                <UpdateGroupChatModal
+                  fetchMessages={fetchMessages}
+                  fetchAgain={fetchAgain}
+                  setFetchAgain={setFetchAgain}
+                />
+              )}
+            </Box>
           </Text>
 
-          <Box 
-          className='forSingleChatsize'
-           display="flex"
+          {showSearch && (
+            <Input
+              placeholder="Search in this chat..."
+              mb={2}
+              value={searchTerm}
+              autoFocus
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                searchMessages(e.target.value);
+              }}
+            />
+          )}
+
+          <Box
+            className="forSingleChatsize"
+            display="flex"
             flexDir="column"
             justifyContent="flex-end"
             p={3}
@@ -267,95 +376,97 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             borderRadius="lg"
             overflowY="hidden"
           >
-            {/* {MSGS here} */}
-
             {loading ? (
-              <Spinner
-                size="xl"
-                w={20}
-                h={20}
-                alignSelf="center"
-                margin="auto"
-                color='cyan'
-              />
+              <Spinner size="xl" w={20} h={20} alignSelf="center" margin="auto" color="cyan" />
             ) : (
               <Box
                 className="messages"
-  display="flex"
-  flexDirection="column"
-  overflowY="scroll"
-  sx={{
-    "&::-webkit-scrollbar": {
-      display: "none" // Hide the scrollbar for WebKit browsers
-    },
-    scrollbarWidth: "none" // Hide the scrollbar for Firefox
-  }}
->
-  <ScrollableChat messages={messages} />
-</Box>
+                display="flex"
+                flexDirection="column"
+                overflowY="scroll"
+                sx={{
+                  "&::-webkit-scrollbar": { display: "none" },
+                  scrollbarWidth: "none",
+                }}
+              >
+                {hasMore && !searchResults && (
+                  <Button size="xs" mb={2} alignSelf="center" onClick={loadOlder} isLoading={loadingMore}>
+                    Load older messages
+                  </Button>
+                )}
+                <ScrollableChat
+                  messages={displayedMessages}
+                  socket={socket}
+                  onMessageChange={(id, patch) => {
+                    if (patch === null) {
+                      setMessages((prev) => prev.filter((m) => m._id !== id));
+                      setSearchResults((prev) => (prev ? prev.filter((m) => m._id !== id) : prev));
+                    } else {
+                      setMessages((prev) => prev.map((m) => (m._id === id ? { ...m, ...patch } : m)));
+                      setSearchResults((prev) => (prev ? prev.map((m) => (m._id === id ? { ...m, ...patch } : m)) : prev));
+                    }
+                  }}
+                />
+              </Box>
             )}
 
-            <FormControl
-            onKeyDown={sendMessage}
-            isRequired
-            mt={3}
-         
-            >
-             {istyping ? <div>
-            <div  
-    style={{ marginBottom: 15, marginLeft: 0 , display:"inline-block"}} >
-            <Lottie  
-    options={defaultOptions}
-    // height={50}
-    width={70}
-    
-/>
-            </div>
-             </div> : <></>}
-            <Input
-                 className='ChatBoxInput'
-               variant="filled"
-  bg="#0c192c"
-  placeholder="Enter a message.."
-  _hover={{
-    backgroundColor: "black" // Corrected syntax: Use ":" instead of "="
-  }}
-  value={newMessage}
-  onChange={typingHandler}
-  color={"white"}
-            />
-            <Button 
-
-            className='sendingBtn'
-            position={"absolute"}
-            zIndex={9}
-            right={0}
-            display={'inline-block'}
-color={"#00717f"}
-            backgroundColor={"#212121"}
-            borderTopLeftRadius={0}
-            borderBottomLeftRadius={0}
-
-             onClick={()=>{
-              sendMsgOnClick()
-            }}>
-<i className="fa-solid fa-paper-plane"></i>
-            </Button>
-
+            <FormControl onKeyDown={onKeySend} isRequired mt={3}>
+              {istyping ? (
+                <div style={{ marginBottom: 15, marginLeft: 0, display: "inline-block" }}>
+                  <Lottie options={defaultOptions} width={70} />
+                </div>
+              ) : (
+                <></>
+              )}
+              <InputGroup>
+                <Input
+                  className="ChatBoxInput"
+                  variant="filled"
+                  bg="#0c192c"
+                  placeholder={attachLoading ? "Uploading image..." : "Enter a message.."}
+                  _hover={{ backgroundColor: "black" }}
+                  value={newMessage}
+                  onChange={typingHandler}
+                  color="white"
+                  isDisabled={attachLoading}
+                />
+                <InputRightElement width="4.5rem" pr={1}>
+                  <IconButton
+                    aria-label="attach"
+                    icon={attachLoading ? <Spinner size="sm" /> : <AttachmentIcon />}
+                    size="sm"
+                    bg="transparent"
+                    color="cyan.300"
+                    _hover={{ bg: "black" }}
+                    onClick={() => document.getElementById("attach-input")?.click()}
+                  />
+                  <input type="file" accept="image/*" id="attach-input" style={{ display: "none" }} onChange={handleAttachment} />
+                  <Button
+                    className="sendingBtn"
+                    size="sm"
+                    p="0 10px"
+                    color="#00717f"
+                    backgroundColor="#212121"
+                    borderTopLeftRadius={0}
+                    borderBottomLeftRadius={0}
+                    onClick={sendMsgOnClick}
+                  >
+                    <i className="fa-solid fa-paper-plane"></i>
+                  </Button>
+                </InputRightElement>
+              </InputGroup>
             </FormControl>
-
-            
           </Box>
-
         </>
-    ) : <Box display="flex" alignItems="center" justifyContent="center" h="100%">
+      ) : (
+        <Box display="flex" alignItems="center" justifyContent="center" h="100%">
           <Text fontSize="3xl" pb={3} fontFamily="Work sans">
             Click on a user to start chatting
           </Text>
-
-        </Box>}
+        </Box>
+      )}
     </>
-  )
-}
+  );
+};
 
-export default SingleChat
+export default SingleChat;
