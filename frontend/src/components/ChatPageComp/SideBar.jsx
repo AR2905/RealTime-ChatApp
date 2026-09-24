@@ -12,8 +12,6 @@ import ChatLoading from './ChatLoading';
 import UserListItem from './UserListItem';
 import { getSender } from '../../config/chatLogic';
 import NotificationBadge, { Effect } from "react-notification-badge";
-import { disconnectSocket } from '../../config/socket';
-import { clearUser } from '../../config/api';
 
 const SideBar = () => {
 
@@ -29,16 +27,12 @@ const SideBar = () => {
     user,
     chats,
     setChats,
-    notification, setNotification, setUser, setSocketConnected } = ChatState()
+    notification, setNotification } = ChatState()
   const navigate = useNavigate()
 
 
   const handleLogout = () => {
-    clearUser()
-    setUser(null)
-    setChats([])
-    setSocketConnected(false)
-    disconnectSocket()
+    localStorage.removeItem("userInfo")
     navigate("/")
 
   }
