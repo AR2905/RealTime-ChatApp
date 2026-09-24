@@ -10,7 +10,7 @@ import ScrollableChat from './ScrollableChat'
 import animationData from '../../Animations/typing.json'
 import Lottie from 'react-lottie'
 import io from 'socket.io-client'
-const  ENDPOINT = "https://chatx-7yko.onrender.com"
+const  ENDPOINT = process.env.REACT_APP_SOCKET_URL || ""
 
 var socket, selectedChatCompare ;
 

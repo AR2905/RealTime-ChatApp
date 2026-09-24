@@ -1,82 +1,73 @@
-
 # Real Time Chat App
 
-This Chat App is a Full Stack Chatting App.
-Uses Socket.io for real time communication.
+Full Stack Chatting App using **Socket.io** for real time communication.
 
-## Technology Stack
+**Tech Stack:** React JS (frontend) | Node.js + Express + Socket.io (backend) | MongoDB | Chakra UI
 
-**Client:** React JS
+---
 
-**Server:** Node JS, Express JS
-
-**Database:** Mongo DB
-
-**ChakraUi** for design the react components
-
-**Socket.io** for real time communication
-
-
-Clone the project
+## Local Development
 
 ```bash
-  git clone https://github.com/AR2905/RealTime_ChatApp
+# 1. Install backend deps (repo root)
+npm install
+
+# 2. Install frontend deps
+cd frontend && npm install && cd ..
+
+# 3. Create a .env file at repo root
+#    PORT=8001
+#    MONGO_URI=mongodb+srv://<user>:<pass>@cluster...
+#    JWT_SEC=<any_secret_string>
+
+# 4. Start backend on http://localhost:8001
+npm start
+
+# 5. Start frontend on http://localhost:3000
+cd frontend && npm start
 ```
 
-Go to the project directory
+Frontend proxies API + socket calls to `http://localhost:8001` in dev via `package.json` `proxy`.
 
-```bash
-  cd RealTime_ChatApp
-```
+---
 
-Install dependencies
+## Deployment
 
-```bash
-  npm install
-```
+Frontend → **Vercel**, Backend → **Render**. They connect via env vars (no code changes needed).
 
-```bash
-  cd frontend/
-  npm install
-```
+### A. Backend on Render
 
-Start the server
+1. Push the repo to GitHub.
+2. In Render (dashboard.render.com) → **New** → **Web Service** → connect your repo.
+3. Set:
+   - **Root Directory:** (leave empty / repo root)
+   - **Runtime:** Node
+   - **Build Command:** `npm install --legacy-peer-deps`
+   - **Start Command:** `npm start`
+4. Add **Environment Variables**:
+   - `PORT` = `8001`
+   - `MONGO_URI` = your MongoDB connection string
+   - `JWT_SEC` = any secret string
+   - `FRONTEND_URL` = your Vercel app URL, e.g. `https://your-app.vercel.app`
+5. Click **Create Web Service**, wait for deploy. Copy your Render URL, e.g. `https://your-app.onrender.com`.
 
-```bash
-  npm run start
-```
-Start the Client
+### B. Frontend on Vercel
 
-```bash
-  //open now terminal
-  cd frontend
-  npm start
-```
+1. In Vercel → **Add New Project** → import the same repo.
+2. Set **Root Directory** to `frontend`.
+3. Vercel auto-detects Create React App (build: `npm run build`, output: `build`).
+4. Add **Environment Variables**:
+   - `REACT_APP_API_URL` = your Render URL, e.g. `https://your-app.onrender.com`
+   - `REACT_APP_SOCKET_URL` = your Render URL, e.g. `https://your-app.onrender.com`
+5. Click **Deploy**. Your app is now live.
 
-Registration: 
-![1Registration](https://github.com/AR2905/RealTime-ChatApp/assets/125748114/3ce1540d-f864-4973-a411-61dbe6fe17b7)
+### C. Connect them
 
-Login:
-![2Login](https://github.com/AR2905/RealTime-ChatApp/assets/125748114/dd1f9cfa-ae48-4e55-aaaf-1babf9411e4b)
+- Open the deployed Vercel app, sign up and chat — done.
+- If API calls fail, double-check `REACT_APP_API_URL` on Vercel and `FRONTEND_URL` on Render match the deployed URLs exactly (no trailing slash).
 
-DashBoard:
-![3DashBoard](https://github.com/AR2905/RealTime-ChatApp/assets/125748114/8da0bc0d-5c10-4495-b20e-3e1946d64188)
+---
 
-User Search:
-![4SearchUsers](https://github.com/AR2905/RealTime-ChatApp/assets/125748114/8c27ffbc-4097-4485-9280-1c28252f9ada)
+## Screenshots
 
-Real Time Notification:
-![5Notification](https://github.com/AR2905/RealTime-ChatApp/assets/125748114/97826f87-7a33-400e-89dc-9017fb971a12)
-
-Real Time Typing Indicator:
-![6TypingIndicator](https://github.com/AR2905/RealTime-ChatApp/assets/125748114/ae6bea51-4a17-480b-95fc-960e7857e871)
-
-Group chat functionality:
-![7Group](https://github.com/AR2905/RealTime-ChatApp/assets/125748114/6f8c2f11-c58c-4d3e-8fcd-a024131f3f03)
-
-Andmin access over the group:
-![8AdminGroup](https://github.com/AR2905/RealTime-ChatApp/assets/125748114/cc05c290-337e-4505-a4b8-d6a3e42c053b)
-
-  
-
-  
+Registration / Login / Dashboard / User Search / Real Time Notifications / Typing Indicator / Group Chat / Group Admin controls.
