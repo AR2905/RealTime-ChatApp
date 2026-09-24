@@ -25,7 +25,7 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 app.use(cors({
-    origin: "*"
+    origin: "https://chat-book-x.vercel.app"
 }));
 
 app.use(express.json())
@@ -56,7 +56,7 @@ const server = app.listen(port, () => {
 const io = require("socket.io")(server, {
     pingTimeout: 60000,
     cors: {
-        origin: "*"
+        origin: "https://chat-book-x.vercel.app"
     }
 });
 
