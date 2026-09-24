@@ -25,8 +25,7 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 app.use(cors({
-    origin: allowedOrigins,
-    credentials: true
+    origin: "*"
 }));
 
 app.use(express.json())
@@ -57,8 +56,7 @@ const server = app.listen(port, () => {
 const io = require("socket.io")(server, {
     pingTimeout: 60000,
     cors: {
-        origin: allowedOrigins,
-        credentials: true
+        origin: "*"
     }
 });
 
